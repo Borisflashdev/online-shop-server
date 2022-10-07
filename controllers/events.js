@@ -1,14 +1,17 @@
 const Event = require('../models/eventModel');
+const User = require('../models/userModel')
 
 const addEvent = async (req,res) => {
-    const { name, date, description } = req.body;
-    console.log(name, date, description);
-    if ( !name || !date || !description || name === null || date === null || description === null) {
-        res.status(400).json({ msg: `You must provide name, date and description` });
-    } else {
-        const event = await Event.create(req.body)
-        res.status(200).json({ event });
+    const { name, date, description, token } = req.body;
+    console.log(req.user);
+
+    if (!name || !date || !description || !token || name === null || date === null || description === null || token === null) {
+        res.status(400).json({ msg: `You must provide name, date, description and token` });
     }
+
+    const event = await Event.create({ name, date, description, token });
+
+    res.status(200).json({ event });
 };
 
 const deleteEvent = async (req,res) => {
@@ -45,9 +48,11 @@ const getEvent = async (req,res) => {
     }
 };
 
-const getAllEvents = async (req,res) => {
-    const event = await Event.find({})
-    res.status(200).json({ event })
+const getAllEvents = async (req, res) => {
+    const userToken = req.user.token;
+
+    const events = await Event.find({token: userToken})
+    res.status(200).json({ events })
 };
 
 module.exports = {

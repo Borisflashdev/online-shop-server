@@ -9,10 +9,12 @@ const {
     getAllEvents
 } = require('../controllers/events.js');
 
-router.get('/events', getAllEvents);
-router.post('/event', addEvent);
-router.get('/:event', getEvent);
-router.delete('/:event', deleteEvent);
-router.patch('/:event', editEvent);
+const authorizationMiddleware = require('../middleware/auth.js');
+
+router.get('/events', authorizationMiddleware, getAllEvents);
+router.post('/event', authorizationMiddleware, addEvent);
+router.get('/:event', authorizationMiddleware, getEvent);
+router.delete('/:event', authorizationMiddleware, deleteEvent);
+router.patch('/:event', authorizationMiddleware, editEvent);
 
 module.exports = router;

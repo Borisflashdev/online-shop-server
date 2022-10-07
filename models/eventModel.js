@@ -13,6 +13,10 @@ const eventSchema = new Schema({
     description: {
         type: String,
         require: [true, 'Description is Required']
+    },
+    token: {
+        type: String,
+        require: [true, 'Token is Required']
     }
 });
 

@@ -7,18 +7,22 @@ require('dotenv').config();
 const uri = process.env.MONGO_URI;
 
 const eventRouter = require('./routes/events');
+const authRouter = require('./routes/auth');
+
 const notFoundMiddleware = require('./middleware/not-found');
+const errorHandlerMiddleware = require('./middleware/error-handler');
 
 // middleware
-app.use(express.static('./public'));
 app.use(express.json());
 app.use(cors());
 
+app.use('/api/v1', authRouter);
 app.use('/api/v1', eventRouter);
 
 app.use(notFoundMiddleware);
+app.use(errorHandlerMiddleware);
 
-const port = 5005;
+const port = process.env.PORT || 5005;
 
 const start = async () => {
     try {
