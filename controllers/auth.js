@@ -1,43 +1,68 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/userModel.js');
+const pool = require('../db/connect');
+const { StatusCodes } = require('http-status-codes');
 
 const signup = async (req, res) => {
   const { username, password } = req.body;
 
   if (!username) {
-    res.status(400).json({ msg: 'Username is not valid.' });
+    res.status(StatusCodes.BAD_REQUEST).json({ msg: 'Username is not valid.' });
     return;
   }
   if (!password) {
-    res.status(400).json({ msg: 'Password is not valid.' })
+    res.status(StatusCodes.BAD_REQUEST).json({ msg: 'Password is not valid.' })
     return;
   }
 
-  const existingUser = await User.exists({ username });
-  if (existingUser !== null) {
-    res.status(400).json({ msg: 'User with this Username already exists.' });
-    return;
-  }
-
-  const token = jwt.sign({ username }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
+  pool.execute(`
+    SELECT *
+    FROM users
+    WHERE username = "${username}"`, function(err, result) {
+    if (err || result.length > 0) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: err || `User with this Username already exists.` });
+      return;
+    } else {
+      const token = jwt.sign({ username }, process.env.JWT_SECRET, {
+        expiresIn: '30d',
+      });
+    
+      pool.execute(`
+        INSERT INTO users
+        VALUES (DEFAULT, "${username}", "${password}", "${token}")`, function(err, result) {
+        if (err) {
+          console.log(err || result.affectedRows === 0);
+        } else {
+          pool.execute(`
+            SELECT *
+            FROM users
+            WHERE token = "${token}"`, function(err, result) {
+            if (err) {
+              res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: err });
+              return;
+            } else {
+              res.status(StatusCodes.CREATED).json({ msg: "user created", result });
+            }
+          });
+        }
+      });
+    }
   });
-
-  const user = await User.create({ username, password, token });
-
-  res.status(200).json({ msg: 'user created', user });
 };
 
 const login = async (req, res) => {
   const { username, password } = req.body;
   
-  const existingUser = await User.findOne({ username, password });
-  if (!existingUser) {
-    res.status(400).json({ msg: 'User not found.' });
-    return;
-  }
-
-  res.status(200).json({ existingUser });
+  pool.execute(`
+    SELECT *
+    FROM users
+    WHERE username = "${username}" AND password = "${password}"`, function(err, result) {
+    if (err || result.length === 0) {
+      res.status(StatusCodes.NOT_FOUND).json({ msg: err || `User not Found` });
+      return;
+    } else {
+      res.status(StatusCodes.OK).json({ result });
+    }
+  });
 };
 
 module.exports = { signup, login };
