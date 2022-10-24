@@ -2,16 +2,16 @@ const pool = require('../db/connect');
 const { StatusCodes } = require('http-status-codes');
 
 const addEvent = async (req,res) => {
-    const { name, date, description, token } = req.body;
+    const { name, date, description, userId } = req.body;
 
-    if (!name || !date || !description || !token || name === null || date === null || description === null || token === null) {
+    if (!name || !date || !description || name === null || date === null || description === null) {
         res.status(StatusCodes.BAD_REQUEST).json({ msg: `You must provide name, date, description and token` });
         return;
     }
-
+    
     pool.execute(`
         INSERT INTO events
-        VALUES (DEFAULT, "${name}", "${date}", "${description}", "${token}")`, function(err, result) {
+        VALUES (DEFAULT, "${name}", "${date}", "${description}", "${userId}")`, function(err, result) {
         if (err) {
                 console.log(err);
         } else {
@@ -76,14 +76,14 @@ const getEvent = async (req,res) => {
 };
 
 const getAllEvents = async (req, res) => {
-    const userToken = req.user.token;
-    if (!userToken) {
-        res.status(StatusCodes.NOT_FOUND).json({ msg: `User ${userToken} does not have any events` });
+    const userId = req.headers.userid;
+    if (!userId) {
+        res.status(StatusCodes.NOT_FOUND).json({ msg: `User ${userId} does not have any events` });
     } else {
         pool.execute(`
             SELECT *
             FROM events
-            WHERE token = "${userToken}"`, function(err, result) {
+            WHERE user_id = "${userId}"`, function(err, result) {
             if (err) {
                 res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: err });
                 return;

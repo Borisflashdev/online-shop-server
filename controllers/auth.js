@@ -3,7 +3,8 @@ const pool = require('../db/connect');
 const { StatusCodes } = require('http-status-codes');
 
 const signup = async (req, res) => {
-  const { username, password } = req.body;
+  const username = req.headers.username;
+  const password = req.headers.password;
 
   if (!username) {
     res.status(StatusCodes.BAD_REQUEST).json({ msg: 'Username is not valid.' });
@@ -50,7 +51,8 @@ const signup = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  const { username, password } = req.body;
+  const username = req.headers.username;
+  const password = req.headers.password;
   
   pool.execute(`
     SELECT *
