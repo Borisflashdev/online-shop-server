@@ -2,31 +2,22 @@ const pool = require('../db/connect');
 const { StatusCodes } = require('http-status-codes');
 
 const getAllProducts = async (req, res) => {
-    pool.execute(`
-        SELECT *
-        FROM products`, function(err, result) {
-        if (err) {
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: err });
-            return;
-        }  else {
-            res.status(StatusCodes.OK).json({ result });
-        }
-    });
-};
-
-const getFilteredProducts = async (req, res) => {
-    const price = req.query.price;
-    const category = req.query.category;
-    const author = req.query.author;
-    const language = req.query.language;
+    const price = req.headers.price;
+    const category = req.headers.category;
+    const author = req.headers.author;
+    const language = req.headers.language;
+    const sort = req.headers.sort;
+    const search = req.headers.search;
 
     pool.execute(`
         SELECT *
         FROM products
-        WHERE price = ${price} AND
+        WHERE price <= ${price} AND
         category = ${category} AND
         author = ${author} AND
-        language = ${language}`, function(err, result) {
+        language = ${language} AND
+        name REGEXP "${search}"
+        ORDER BY ${sort}`, function(err, result) {
         if (err) {
             res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: err });
             return;
@@ -69,4 +60,4 @@ const addOrder = async (req, res) => {
     });
 };
 
-module.exports = { getAllProducts, getFilteredProducts, getSingleProduct, addOrder };
+module.exports = { getAllProducts, getSingleProduct, addOrder };

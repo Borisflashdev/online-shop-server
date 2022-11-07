@@ -104,7 +104,7 @@ const editCart = async (req, res) => {
                 } else if (result.length === 0) {
                     res.status(StatusCodes.NOT_FOUND).json({ msg: `This user don't have this item.` });
                     return;
-                } else if (result[0].quantity === 0) {
+                } else if (result[0].quantity === "0") {
                     pool.execute(`
                         DELETE FROM shopping_cart
                         WHERE user_id = ${user_id} AND product_id = ${product_id}`, function(err, result) {
