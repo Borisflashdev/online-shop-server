@@ -8,7 +8,8 @@ const getAllProducts = async (req, res) => {
     const language = req.headers.language;
     const sort = req.headers.sort;
     const search = req.headers.search;
-
+    const page = req.headers.page;
+    
     pool.execute(`
         SELECT *
         FROM products
@@ -22,7 +23,27 @@ const getAllProducts = async (req, res) => {
             res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: err });
             return;
         }  else {
-            res.status(StatusCodes.OK).json({ result });
+            const numPerPage = 12;
+            const pagesNum = Math.ceil(result.length / numPerPage);
+            const limit = (page-1) * 12 + ', ' + numPerPage;
+            
+            pool.execute(`
+                SELECT *
+                FROM products
+                WHERE price <= ${price} AND
+                category = ${category} AND
+                author = ${author} AND
+                language = ${language} AND
+                name REGEXP "${search}"
+                ORDER BY ${sort}
+                LIMIT ${limit}`, function(err, result) {
+                if (err) {
+                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: err });
+                    return;
+                }  else {
+                    res.status(StatusCodes.OK).json({ result, pagesNum });
+                }
+            });
         }
     });
 };
