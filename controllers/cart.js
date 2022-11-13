@@ -73,56 +73,6 @@ const deleteCart = async (req, res) => {
     });
 };
 
-const editCart = async (req, res) => {
-    const user_id = req.headers.userid;
-    const product_id = req.params.id;
-
-    if (!user_id) {
-        res.status(StatusCodes.BAD_REQUEST).json({ msg: 'You must provide userId.' });
-        return;
-    }
-    if (!product_id) {
-        res.status(StatusCodes.BAD_REQUEST).json({ msg: 'You must provide productId.' });
-        return;
-    }
-    
-    pool.execute(`
-        UPDATE shopping_cart 
-        SET quantity = quantity - 1
-        WHERE user_id = "${user_id}" AND product_id = "${product_id}"`, function(err, result) {
-        if (err) {
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: err });
-            return;
-        }  else {
-            pool.execute(`
-            SELECT *
-            FROM shopping_cart
-            WHERE user_id = "${user_id}" AND product_id = "${product_id}"`, function(err, result) {
-                if (err) {
-                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: err });
-                    return;
-                } else if (result.length === 0) {
-                    res.status(StatusCodes.NOT_FOUND).json({ msg: `This user don't have this item.` });
-                    return;
-                } else if (result[0].quantity === "0") {
-                    pool.execute(`
-                        DELETE FROM shopping_cart
-                        WHERE user_id = ${user_id} AND product_id = ${product_id}`, function(err, result) {
-                        if (err) {
-                            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: err });
-                            return;
-                        }  else {
-                            res.status(StatusCodes.OK).json({ result });
-                        }
-                    });
-                } else {
-                    res.status(StatusCodes.OK).json({ result });
-                }
-            });
-        }
-    });
-};
-
 const deleteFullCart = async (req, res) => {
     const user_id = req.headers.userid;
 
@@ -145,6 +95,7 @@ const deleteFullCart = async (req, res) => {
 
 const getFullCart = async (req, res) => {
     const user_id = req.headers.userid;
+    const sort = req.headers.sort;
 
     if (!user_id) {
         res.status(StatusCodes.BAD_REQUEST).json({ msg: 'You must provide userId.' });
@@ -153,7 +104,9 @@ const getFullCart = async (req, res) => {
     
     pool.execute(`
         SELECT *
-        FROM shopping_cart
+        FROM products p
+        JOIN shopping_cart s
+            ON p.product_id = s.product_id
         WHERE user_id = ${user_id}`, function(err, result) {
         if (err) {
             res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: err });
@@ -164,4 +117,4 @@ const getFullCart = async (req, res) => {
     });
 };
 
-module.exports = { addProduct, deleteCart, editCart, deleteFullCart, getFullCart };
+module.exports = { addProduct, deleteCart, deleteFullCart, getFullCart };
